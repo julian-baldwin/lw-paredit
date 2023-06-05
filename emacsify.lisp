@@ -252,10 +252,13 @@ This command assumes point is not in a string or comment."
 
 
 (edefun move-past-close-and-reindent ()
-  "Move past next `)', delete indentation before it, then indent after it."
-  (interactive)
+  "Move past next `)', delete indentation before it, then indent after it and optionally
+insert an indented new line if given a prefix argument."
+  (interactive "p")
   (up-list 1)
+  (delete-horizontal-space-command nil)
   (forward-char -1)
+  (delete-horizontal-space-command nil)  
   (while (save-excursion		; this is my contribution
 	   (let ((before-paren (point)))
 	     (back-to-indentation)
@@ -270,7 +273,9 @@ This command assumes point is not in a string or comment."
                          (not (paredit-in-comment-p)))))))
     (delete-indentation))
   (forward-char 1)
-  (newline-and-indent))
+  (if p
+      (newline-and-indent)
+    (indent-command nil)))
 
 
 (defun move-past-close-and-reindent ()

@@ -59,7 +59,60 @@
   (bind-key "Backward Slurp Sexp" #("Control-c" "(") :mode "Paredit")
   (bind-key "Backward Barf Sexp" #("Control-c" "{") :mode "Paredit"))
 
-
+;;; Useful Navigation & Editing Commands
+;;; Implemented directly in terms of LW editor.
+
+(defcommand "Paredit End of Form" (p)
+     "Move to the end of the current form."
+     "Move to the end of the current form."
+  (declare (ignore p))
+  (forward-up-list-command nil)
+  (backward-character-command nil))
+
+(defcommand "Paredit Beginning of Form" (p)
+     "Move to the beginning of the current form."
+     "Move to the beginning of the current form."
+  (declare (ignore p))
+  (forward-up-list-command nil)
+  (backward-list-command nil)
+  (down-list-command nil))
+
+(defcommand "Paredit Backward Down List" (p)
+     "Move down to the previous list."
+     "Move down to the previous list."
+  (declare (ignore p))
+  (backward-list-command nil)
+  (down-list-command nil)
+  (paredit-end-of-form-command nil))
+
+(defcommand "Paredit Copy Form" (p)
+     "Copy the form containing point to the kill ring.
+With a prefix argument, skip over the form after copying."
+     "Copy the form containing point to the kill ring."
+  (save-excursion
+    (set-mark-command nil)
+    (backward-up-list-command nil)
+    (mark-form-command nil)
+    (copy-to-cut-buffer-command nil)
+    (pop-mark-command nil))
+  (when p
+    (forward-up-list-command nil))
+  (message "Form copied"))
+
+(defcommand "Paredit Unwrap Form" (p)
+     "Unwrap the form containing point."
+     "Unwrap the form containing point."
+  (declare (ignore p))
+  (save-excursion
+    (collect-undo (current-buffer)
+      (paredit-end-of-form-command nil)
+      (set-mark-command nil)
+      (paredit-beginning-of-form-command nil)
+      (delete-previous-character-command nil)
+      (pop-and-goto-mark-command nil)
+      (delete-next-character-command nil)
+      (indent-sexp)
+      (message "Unwrapped form"))))
 
 ;;; ----------------
 ;;; Basic editing commands
@@ -94,14 +147,19 @@ parenthesis."
 (edefun paredit-close-list ()
   "Moves past one closing parenthesis and reindents.
 If in a string, comment, or character literal, inserts a single closing
-parenthesis."
-  (interactive)
+parenthesis. With a prefix argument also insert a newline."
+  (interactive "p")
   (collect-undo (current-buffer)
     (if (or (paredit-in-comment-p)
             (paredit-in-string-p)
             (eql (char-before) #\\ ))
         (insert ")")
-      (move-past-close-and-reindent))))
+      (move-past-close-and-reindent-command p))))
+
+(edefun paredit-close-list-newline ()
+  "Move past one closing parenthesis, reindent and insert an indented newline."
+  (interactive)
+  (paredit-close-list-command t))
 
 
 (edefun paredit-doublequote ()

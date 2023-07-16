@@ -203,6 +203,18 @@ to the user and inserts a single literal double-quote nevertheless."
         (decf n)))))
 
 
+(defcommand "Paredit Insert Literal Doublequote" (p)
+     "Insert a literal double quote character."
+     "Insert a literal double quote character."
+  (collect-undo (current-buffer)
+    (let ((point (current-point)))
+      (if (and (numberp p)
+               (plusp p))
+          (dotimes (n p)
+            (insert-character point #\"))
+        (insert-character point #\")))))
+
+
 (edefun paredit-backspace ()
   "Deletes a character backward or moves backward over a delimiter.
 If at the start of an empty string literal, deletes the whole string,
